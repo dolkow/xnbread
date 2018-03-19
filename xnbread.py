@@ -11,21 +11,11 @@ FLAG_BIT_COMPRESSED = 0x80
 Header = define_tuple('Header', '<3scBBII', 14,
 		'magic target version flags fsize dsize')
 
-def _make(ttype, f):
-	fmt = ttype.format
-	sz = struct.calcsize(fmt)
-	assert sz == ttype.expected_size
-	data = f.read(sz)
-	fields = struct.unpack(fmt, data)
-	return ttype._make(fields)
-
 if __name__ == '__main__':
 	import sys
 	for filename in sys.argv[1:]:
 		with open(filename, 'rb') as f:
 			header = Header._make(struct.unpack(Header.format, f.read(Header.size)))
-			print(filename, header.magic, header.target, header.version,
-					hex(header.flags), header.fsize, header.dsize)
 			data = f.read()
 			dumphex(data)
 			assert header.magic == b'XNB'

@@ -24,7 +24,6 @@ def define_tuple(name, fmt, expected_size, fields):
 	tup = namedtuple(name, fields)
 	tup.format = fmt
 	tup.size = expected_size
-	print(tup._make)
 	assert struct.calcsize(fmt) == expected_size
 	return tup
 
