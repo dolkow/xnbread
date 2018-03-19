@@ -29,4 +29,4 @@ if __name__ == '__main__':
 				data = lzx.decompress(data, csize, header.dsize)
 			else:
 				TODO("uncompressed data not implemented yet")
-			print(bytes(data))
+			dumphex(data)
