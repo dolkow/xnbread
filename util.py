@@ -24,8 +24,21 @@ def dumphex(s):
 		args = tuple(int(c) for c in data)
 		return fmt % args
 
+	def bytefmt(b):
+		if 32 <= b < 127:
+			return chr(b)
+		elif b == ord('\t'):
+			return '␉'
+		elif b == ord('\n'):
+			return '␊'
+		elif b == ord('\r'):
+			return '␍'
+		elif b == ord('\0'):
+			return '␀'
+		return '·'
+
 	def mkstr(data):
-		return ''.join(chr(c) if 32 <= c < 127 else '·' for c in data)
+		return ''.join(map(bytefmt, data))
 
 	while pos < end:
 		raw = mkstr(s[pos:pos+16])
