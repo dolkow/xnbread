@@ -6,7 +6,7 @@ import struct
 from collections import namedtuple
 
 def TODO(msg = "Not implemented yet."):
-	assert 0, msg
+	raise NotImplementedError(msg)
 
 def dumphex(s):
 	assert type(s) in (bytes, bytearray, memoryview)
