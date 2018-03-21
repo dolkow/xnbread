@@ -6,7 +6,7 @@
 
 import struct
 
-from util import TODO, clamp
+from util import TODO, clamp, dumphex
 
 # block types:
 VERBATIM     = 1
@@ -26,13 +26,16 @@ BASE_POSITION = [sum(1 << x for x in EXTRA_BITS[:i]) for i in range(50)]
 
 # pre-tree
 PRETREE_SIZE = 20
-PRETREE_TABLE_BITS = 6
+PRETREE_TABLE_BITS = 8
 # main tree
 MAIN_SIZE = NUM_CHARS + NUM_POSITION_SLOTS * 8
-MAIN_TABLE_BITS = 12
+MAIN_TABLE_BITS = 15
 # secondary tree (a.k.a. "length tree"; a difficult name to use); beta for short
 BETA_SIZE = 249
-BETA_TABLE_BITS = 12
+BETA_TABLE_BITS = 15
+# aligned tree
+ALIGNED_SIZE = 8
+ALIGNED_TABLE_BITS = 8
 
 
 class BitStream(object):
@@ -112,10 +115,14 @@ def decompress_block(cbuf, dbuf):
 		if transformed:
 			TODO("intel call instruction transform not supported")
 	while dpos < len(dbuf):
+		# TODO: "after each 32768th uncompressed byte is represented, the output bit buffer is byte aligned on a 16-bit boundary by outputting 0-15 zero bits"
 		# TODO: block remaining bytes?
 		blocktype = cbuf.read(3)
 		blocksize = cbuf.read(24) # uncompressed size of this block
-		if blocktype == VERBATIM:
+		if blocktype in (VERBATIM, ALIGNED):
+			if blocktype == ALIGNED:
+				align_lengths = [cbuf.read(3) for i in range(8)]
+				aligntree = LookupTable(ALIGNED_TABLE_BITS, align_lengths)
 			update_lengths(cbuf, main_lengths[:NUM_CHARS])
 			update_lengths(cbuf, main_lengths[NUM_CHARS:])
 			maintree = LookupTable(MAIN_TABLE_BITS, main_lengths)
@@ -124,6 +131,7 @@ def decompress_block(cbuf, dbuf):
 		else:
 			TODO("no implementation for block type %d" % blocktype)
 		while blocksize > 0:
+			print(dpos, blocksize, cbuf.nextbyte, len(cbuf.bytes))
 			val = maintree.read_from(cbuf)
 			if val < NUM_CHARS:
 				dbuf[dpos] = val
@@ -140,14 +148,28 @@ def decompress_block(cbuf, dbuf):
 				match_offset = lru[position_slot]
 				lru[position_slot] = lru[0]
 				lru[0] = match_offset
-			elif position_slot == 3:
-				match_offset = 1
 			else:
 				extra = EXTRA_BITS[position_slot]
 				if blocktype == VERBATIM:
 					if extra > 0:
 						verbatim_bits = cbuf.read(extra)
+					else:
+						verbatim_bits = 0
 					formatted_offset = BASE_POSITION[position_slot] + verbatim_bits
+				elif blocktype == ALIGNED:
+					if extra > 3:
+						verbatim_bits = cbuf.read(extra - 3) << 3
+						aligned_bits = aligntree.read_from(cbuf)
+					elif extra == 3:
+						verbatim_bits = aligntree.read_from(cbuf)
+						aligned_bits = 0
+					elif extra > 0:
+						verbatim_bits = cbuf.read(extra)
+						aligned_bits = 0
+					else:
+						verbatim_bits = 0
+						aligned_bits = 0
+					formatted_offset = BASE_POSITION[position_slot] + verbatim_bits + aligned_bits
 				else:
 					TODO()
 				match_offset = formatted_offset - 2
@@ -198,7 +220,9 @@ def decompress(cdata, inputsize, outputsize):
 			fsize, bsize = struct.unpack('>HH', cdata[cpos+1:cpos+5])
 			cpos += 5
 		else:
-			TODO("haven't tested with blocks that don't start with 0xff")
+			fsize = 1 << 15
+			bsize, = struct.unpack('>H', cdata[cpos:cpos+2])
+			cpos += 2
 		assert fsize > 0
 		assert bsize > 0
 
