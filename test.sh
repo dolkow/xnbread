@@ -8,7 +8,8 @@ RED="$(tput setaf 1)"
 
 SCRATCH=$(mktemp)
 
-for xnb in tests/*.xnb; do
+function testone() {
+	xnb="$1"
 	out="${xnb%.xnb}.out"
 	echo -n "$xnb... "
 	./xnbread.py -r "$xnb" > "$SCRATCH"
@@ -17,5 +18,17 @@ for xnb in tests/*.xnb; do
 	else
 		echo "${RED}Failure.${RESET}"
 	fi
-done
+}
+
+if [ $# -gt 0 ]; then
+	while [ $# -gt 0 ]; do
+		testone "$1"
+		shift
+	done
+else
+	find tests -name '*.xnb' | while read xnb; do
+		testone "$xnb"
+	done
+fi
+
 rm $SCRATCH
