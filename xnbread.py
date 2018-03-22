@@ -42,7 +42,7 @@ class ByteStream(object):
 		return str(binary, 'utf-8')
 
 
-def read(f):
+def read_payload(f):
 	header = Header._make(struct.unpack(Header.format, f.read(Header.size)))
 	assert header.magic == b'XNB'
 	assert header.target in b'wmx'
@@ -59,7 +59,9 @@ def read(f):
 	else:
 		TODO("uncompressed data not implemented yet")
 	#dumphex(data)
+	return data
 
+def decode_payload(data):
 	# now that we have the payload, let's decode it
 	stream = ByteStream(data)
 	nreaders = stream.read_7bitint()
@@ -78,9 +80,18 @@ def read(f):
 
 if __name__ == '__main__':
 	import sys
+	raw = False
 	for filename in sys.argv[1:]:
+		if filename == '-r':
+			raw = True
+			continue
 		with open(filename, 'rb') as f:
-			out = read(f)
+			data = read_payload(f)
+			if raw:
+				sys.stdout.buffer.write(data)
+				continue
+			else:
+				out = decode_payload(data)
 			if type(out) is dict:
 				for key in out:
 					print(key, '==>')

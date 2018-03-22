@@ -131,7 +131,6 @@ def decompress_block(cbuf, dbuf):
 		else:
 			TODO("no implementation for block type %d" % blocktype)
 		while blocksize > 0:
-			print(dpos, blocksize, cbuf.nextbyte, len(cbuf.bytes))
 			val = maintree.read_from(cbuf)
 			if val < NUM_CHARS:
 				dbuf[dpos] = val
