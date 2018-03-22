@@ -143,16 +143,12 @@ def decompress_block(cbuf, dbuf, dpos, dstate):
 		else:
 			TODO("no implementation for block type %d" % bstate.type)
 	assert bstate.left > 0
-	assert dpos + bstate.left >= len(dbuf)
-	assert dpos + bstate.left == len(dbuf) or len(dbuf) - dpos == 1 << 15
-	bstate.left -= len(dbuf) - dpos # subtract the bytes we'll read here
-	if bstate.left == 0:
-		dstate.block = None # we'll finish the current block here.
-	while dpos < len(dbuf):
+	while dpos < len(dbuf) and bstate.left > 0:
 		val = bstate.maintree.read_from(cbuf)
 		if val < NUM_CHARS:
 			dbuf[dpos] = val
 			dpos += 1
+			bstate.left -= 1
 			continue
 		match_length = (val - NUM_CHARS) & NUM_PRIMARY_LENGTHS
 		if match_length == NUM_PRIMARY_LENGTHS:
@@ -196,6 +192,10 @@ def decompress_block(cbuf, dbuf, dpos, dstate):
 		for i in range(match_length):
 			dbuf[dpos + i] = dbuf[dpos + i - match_offset]
 		dpos += match_length
+		bstate.left -= match_length
+	if bstate.left == 0:
+		dstate.block = None
+	return dpos
 
 def update_lengths(bitstream, lengths):
 	pretree = LookupTable([bitstream.read(4) for i in range(PRETREE_SIZE)])
@@ -241,9 +241,11 @@ def decompress(cdata, inputsize, outputsize):
 		assert fsize > 0
 		assert bsize > 0
 
-		decompress_block(cdata[cpos:cpos+bsize], ddata[:dpos+fsize], dpos, dstate)
+		assert cpos + bsize <= inputsize
+		assert dpos + fsize <= outputsize
+		dbuf = ddata[:dpos+fsize]
+		dpos = decompress_block(cdata[cpos:cpos+bsize], ddata[:dpos+fsize], dpos, dstate)
 
 		cpos += bsize
-		dpos += fsize
 	assert dpos == outputsize
 	return ddata
