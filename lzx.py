@@ -26,16 +26,12 @@ BASE_POSITION = [sum(1 << x for x in EXTRA_BITS[:i]) for i in range(50)]
 
 # pre-tree
 PRETREE_SIZE = 20
-PRETREE_TABLE_BITS = 8
 # main tree
 MAIN_SIZE = NUM_CHARS + NUM_POSITION_SLOTS * 8
-MAIN_TABLE_BITS = 15
 # secondary tree (a.k.a. "length tree"; a difficult name to use); beta for short
 BETA_SIZE = 249
-BETA_TABLE_BITS = 15
 # aligned tree
 ALIGNED_SIZE = 8
-ALIGNED_TABLE_BITS = 8
 
 from sys import stderr
 
@@ -75,11 +71,12 @@ class BitStream(object):
 		return val
 
 class LookupTable(object):
-	def __init__(self, nbits, symbol_lengths):
-		self.nbits = nbits
+	def __init__(self, symbol_lengths):
+		self.nbits = nbits = max(symbol_lengths)
 		self.table = table = (1 << nbits) * [None]
 		self.symbol_lengths = symbol_lengths
 
+		assert nbits <= 20
 		assert all(length <= nbits for length in symbol_lengths)
 		assert all(length >= 0 for length in symbol_lengths)
 
@@ -137,12 +134,12 @@ def decompress_block(cbuf, dbuf, dpos, dstate):
 		if bstate.type in (VERBATIM, ALIGNED):
 			if bstate.type == ALIGNED:
 				align_lengths = [cbuf.read(3) for i in range(8)]
-				bstate.aligntree = LookupTable(ALIGNED_TABLE_BITS, align_lengths)
+				bstate.aligntree = LookupTable(align_lengths)
 			update_lengths(cbuf, dstate.main_lengths[:NUM_CHARS])
 			update_lengths(cbuf, dstate.main_lengths[NUM_CHARS:])
-			bstate.maintree = LookupTable(MAIN_TABLE_BITS, dstate.main_lengths)
+			bstate.maintree = LookupTable(dstate.main_lengths)
 			update_lengths(cbuf, dstate.beta_lengths)
-			bstate.betatree = LookupTable(BETA_TABLE_BITS, dstate.beta_lengths)
+			bstate.betatree = LookupTable(dstate.beta_lengths)
 		else:
 			TODO("no implementation for block type %d" % bstate.type)
 	assert bstate.left > 0
@@ -201,8 +198,7 @@ def decompress_block(cbuf, dbuf, dpos, dstate):
 		dpos += match_length
 
 def update_lengths(bitstream, lengths):
-	pretree = LookupTable(PRETREE_TABLE_BITS,
-	                      [bitstream.read(4) for i in range(PRETREE_SIZE)])
+	pretree = LookupTable([bitstream.read(4) for i in range(PRETREE_SIZE)])
 	repeats_left = 0
 	for x in range(len(lengths)):
 		if repeats_left > 0:
