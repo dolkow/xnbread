@@ -37,6 +37,10 @@ BETA_TABLE_BITS = 15
 ALIGNED_SIZE = 8
 ALIGNED_TABLE_BITS = 8
 
+from sys import stderr
+
+def log(*args):
+	print(*args, file=stderr)
 
 class BitStream(object):
 	''' the LZX format bit stream puts bits in 16-bit entities, with
@@ -144,7 +148,7 @@ def decompress_block(cbuf, dbuf, dpos, dstate):
 	assert bstate.left > 0
 	assert dpos + bstate.left >= len(dbuf)
 	assert dpos + bstate.left == len(dbuf) or len(dbuf) - dpos == 1 << 15
-	bstate.left -= len(dbuf)
+	bstate.left -= len(dbuf) - dpos # subtract the bytes we'll read here
 	if bstate.left == 0:
 		dstate.block = None # we'll finish the current block here.
 	while dpos < len(dbuf):
