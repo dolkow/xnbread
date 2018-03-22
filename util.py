@@ -4,6 +4,7 @@
 import struct
 
 from collections import namedtuple
+from sys import stderr
 
 def TODO(msg = "Not implemented yet."):
 	raise NotImplementedError(msg)
@@ -44,7 +45,7 @@ def dumphex(s):
 		raw = mkstr(s[pos:pos+16])
 		hex1 = mkhex(s[pos:pos+8])
 		hex2 = mkhex(s[pos+8:pos+16]) if pos + 8 < end else ''
-		print('%6x: %-23s  %-23s | %s' % (pos, hex1, hex2, raw))
+		print('%6x: %-23s  %-23s | %s' % (pos, hex1, hex2, raw), file=stderr)
 		pos += 16
 
 def define_tuple(name, fmt, expected_size, fields):
