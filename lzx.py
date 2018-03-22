@@ -6,7 +6,7 @@
 
 import struct
 
-from util import TODO, clamp, dumphex
+from util import TODO, clamp, dumphex, log
 
 # block types:
 VERBATIM     = 1
@@ -32,11 +32,6 @@ MAIN_SIZE = NUM_CHARS + NUM_POSITION_SLOTS * 8
 BETA_SIZE = 249
 # aligned tree
 ALIGNED_SIZE = 8
-
-from sys import stderr
-
-def log(*args):
-	print(*args, file=stderr)
 
 class BitStream(object):
 	''' the LZX format bit stream puts bits in 16-bit entities, with

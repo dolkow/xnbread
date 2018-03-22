@@ -6,6 +6,9 @@ import struct
 from collections import namedtuple
 from sys import stderr
 
+def log(*args):
+	print(*args, file=stderr)
+
 def TODO(msg = "Not implemented yet."):
 	raise NotImplementedError(msg)
 

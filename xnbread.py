@@ -2,15 +2,15 @@
 #coding=utf8
 
 from factory import ObjectFactory
-from util import TODO, define_tuple, dumphex
+from util import TODO, define_tuple, dumphex, log
 import struct
 
 KNOWN_FLAGS = 0x81
 FLAG_BIT_HIDEF      = 0x01
 FLAG_BIT_COMPRESSED = 0x80
 
-Header = define_tuple('Header', '<3scBBII', 14,
-		'magic target version flags fsize dsize')
+Header = define_tuple('Header', '<3scBBI', 10,
+		'magic target version flags fsize')
 
 class ByteStream(object):
 	def __init__(self, content):
@@ -48,17 +48,18 @@ def read_payload(f):
 	assert header.target in b'wmx'
 	assert header.version == 5
 	assert header.flags & KNOWN_FLAGS == header.flags
-	data = f.read(header.fsize - Header.size)
-	assert header.fsize == len(data) + Header.size
-	#dumphex(data)
 	if header.flags & FLAG_BIT_COMPRESSED:
 		import lzx
-		csize = header.fsize - Header.size
-		data = lzx.decompress(data, csize, header.dsize)
-		assert len(data) == header.dsize
+		dsize, = struct.unpack('<I', f.read(4))
+		csize = header.fsize - Header.size - 4
+		data = f.read(csize)
+		assert len(data) == csize
+		data = lzx.decompress(data, csize, dsize)
+		assert len(data) == dsize
 	else:
-		TODO("uncompressed data not implemented yet")
-	#dumphex(data)
+		csize = header.fsize - Header.size
+		data = f.read(csize)
+		assert len(data) == csize
 	return data
 
 def decode_payload(data):
