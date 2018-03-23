@@ -114,82 +114,82 @@ class BlockState(object):
 def decompress_block(cbuf, dbuf, dpos, dstate):
 	cbuf = BitStream(cbuf)
 
-	bstate = dstate.block
-	if bstate is None:
-		if dstate.first_block:
-			dstate.first_block = False
-			transformed = cbuf.read(1)
-			if transformed:
-				TODO("intel call instruction transform not supported")
-		else:
-			TODO("Haven't tested multi-block files yet...")
-		# time for a new block!
-		bstate = BlockState(cbuf.read(3), cbuf.read(24)) # type, unpacked size
-		dstate.block = bstate
-		if bstate.type in (VERBATIM, ALIGNED):
-			if bstate.type == ALIGNED:
-				align_lengths = [cbuf.read(3) for i in range(8)]
-				bstate.aligntree = LookupTable(align_lengths)
-			update_lengths(cbuf, dstate.main_lengths[:NUM_CHARS])
-			update_lengths(cbuf, dstate.main_lengths[NUM_CHARS:])
-			bstate.maintree = LookupTable(dstate.main_lengths)
-			update_lengths(cbuf, dstate.beta_lengths)
-			bstate.betatree = LookupTable(dstate.beta_lengths)
-		else:
-			TODO("no implementation for block type %d" % bstate.type)
-	assert bstate.left > 0
-	while dpos < len(dbuf) and bstate.left > 0:
-		val = bstate.maintree.read_from(cbuf)
-		if val < NUM_CHARS:
-			dbuf[dpos] = val
-			dpos += 1
-			bstate.left -= 1
-			continue
-		match_length = (val - NUM_CHARS) & NUM_PRIMARY_LENGTHS
-		if match_length == NUM_PRIMARY_LENGTHS:
-			match_length += MIN_MATCH + bstate.betatree.read_from(cbuf)
-		else:
-			match_length += MIN_MATCH
-		position_slot = (val - NUM_CHARS) >> 3
-		if position_slot <= 2:
-			match_offset = dstate.lru[position_slot]
-			dstate.lru[position_slot] = dstate.lru[0]
-			dstate.lru[0] = match_offset
-		else:
-			extra = EXTRA_BITS[position_slot]
-			if bstate.type == VERBATIM:
-				if extra > 0:
-					verbatim_bits = cbuf.read(extra)
-				else:
-					verbatim_bits = 0
-				formatted_offset = BASE_POSITION[position_slot] + verbatim_bits
-			elif bstate.type == ALIGNED:
-				if extra > 3:
-					verbatim_bits = cbuf.read(extra - 3) << 3
-					aligned_bits = bstate.aligntree.read_from(cbuf)
-				elif extra == 3:
-					verbatim_bits = bstate.aligntree.read_from(cbuf)
-					aligned_bits = 0
-				elif extra > 0:
-					verbatim_bits = cbuf.read(extra)
-					aligned_bits = 0
-				else:
-					verbatim_bits = 0
-					aligned_bits = 0
-				formatted_offset = BASE_POSITION[position_slot] + verbatim_bits + aligned_bits
+	while dpos < len(dbuf):
+		bstate = dstate.block
+		if bstate is None:
+			if dstate.first_block:
+				dstate.first_block = False
+				transformed = cbuf.read(1)
+				if transformed:
+					TODO("intel call instruction transform not supported")
+			# time for a new block!
+			bstate = BlockState(cbuf.read(3), cbuf.read(24)) # type, unpacked size
+			dstate.block = bstate
+			if bstate.type in (VERBATIM, ALIGNED):
+				if bstate.type == ALIGNED:
+					align_lengths = [cbuf.read(3) for i in range(8)]
+					bstate.aligntree = LookupTable(align_lengths)
+				update_lengths(cbuf, dstate.main_lengths[:NUM_CHARS])
+				update_lengths(cbuf, dstate.main_lengths[NUM_CHARS:])
+				bstate.maintree = LookupTable(dstate.main_lengths)
+				update_lengths(cbuf, dstate.beta_lengths)
+				bstate.betatree = LookupTable(dstate.beta_lengths)
 			else:
-				TODO()
-			match_offset = formatted_offset - 2
-			dstate.lru[2] = dstate.lru[1]
-			dstate.lru[1] = dstate.lru[0]
-			dstate.lru[0] = match_offset
-		# now, copy!
-		for i in range(match_length):
-			dbuf[dpos + i] = dbuf[dpos + i - match_offset]
-		dpos += match_length
-		bstate.left -= match_length
-	if bstate.left == 0:
-		dstate.block = None
+				TODO("no implementation for block type %d" % bstate.type)
+		assert bstate.left > 0
+		while dpos < len(dbuf) and bstate.left > 0:
+			val = bstate.maintree.read_from(cbuf)
+			if val < NUM_CHARS:
+				dbuf[dpos] = val
+				dpos += 1
+				bstate.left -= 1
+				continue
+			match_length = (val - NUM_CHARS) & NUM_PRIMARY_LENGTHS
+			if match_length == NUM_PRIMARY_LENGTHS:
+				match_length += MIN_MATCH + bstate.betatree.read_from(cbuf)
+			else:
+				match_length += MIN_MATCH
+			position_slot = (val - NUM_CHARS) >> 3
+			if position_slot <= 2:
+				match_offset = dstate.lru[position_slot]
+				dstate.lru[position_slot] = dstate.lru[0]
+				dstate.lru[0] = match_offset
+			else:
+				extra = EXTRA_BITS[position_slot]
+				if bstate.type == VERBATIM:
+					if extra > 0:
+						verbatim_bits = cbuf.read(extra)
+					else:
+						verbatim_bits = 0
+					formatted_offset = BASE_POSITION[position_slot] + verbatim_bits
+				elif bstate.type == ALIGNED:
+					if extra > 3:
+						verbatim_bits = cbuf.read(extra - 3) << 3
+						aligned_bits = bstate.aligntree.read_from(cbuf)
+					elif extra == 3:
+						verbatim_bits = bstate.aligntree.read_from(cbuf)
+						aligned_bits = 0
+					elif extra > 0:
+						verbatim_bits = cbuf.read(extra)
+						aligned_bits = 0
+					else:
+						verbatim_bits = 0
+						aligned_bits = 0
+					formatted_offset = BASE_POSITION[position_slot] + verbatim_bits + aligned_bits
+				else:
+					TODO()
+				match_offset = formatted_offset - 2
+				dstate.lru[2] = dstate.lru[1]
+				dstate.lru[1] = dstate.lru[0]
+				dstate.lru[0] = match_offset
+			# now, copy!
+			for i in range(match_length):
+				dbuf[dpos + i] = dbuf[dpos + i - match_offset]
+			dpos += match_length
+			bstate.left -= match_length
+		if bstate.left == 0:
+			dstate.block = None
+	assert dpos == len(dbuf)
 	return dpos
 
 def update_lengths(bitstream, lengths):
@@ -238,9 +238,9 @@ def decompress(cdata, inputsize, outputsize):
 
 		assert cpos + bsize <= inputsize
 		assert dpos + fsize <= outputsize
-		dbuf = ddata[:dpos+fsize]
-		dpos = decompress_block(cdata[cpos:cpos+bsize], ddata[:dpos+fsize], dpos, dstate)
+		decompress_block(cdata[cpos:cpos+bsize], ddata[:dpos+fsize], dpos, dstate)
 
+		dpos += fsize
 		cpos += bsize
 	assert dpos == outputsize
 	return ddata
