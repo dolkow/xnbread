@@ -9,14 +9,13 @@ RED="$(tput setaf 1)"
 function testone() {
 	xnb="$1"
 	echo -n "$xnb... "
-	if ./xnbread.py "$xnb" &>/dev/null; then
-		echo "${GREEN}OK!${RESET}"
-	else
+	until ./xnbread.py "$xnb" &>/dev/null; do
 		echo "${RED}Failure.${RESET}"
-		echo
 		./xnbread.py "$xnb" || true # run again to get the callstack/message
-		exit 1
-	fi
+		echo
+		read -p 'Press ENTER to retry, or Ctrl-C to give up'
+	done
+	echo "${GREEN}OK!${RESET}"
 }
 
 if [ $# -gt 0 ]; then

@@ -41,6 +41,11 @@ class ByteStream(object):
 		self.pos += nbytes
 		return str(binary, 'utf-8')
 
+	def read_bytes(self, nbytes):
+		out = self.data[self.pos:self.pos+nbytes]
+		self.pos += nbytes
+		return out
+
 
 def read_payload(f):
 	header = Header._make(struct.unpack(Header.format, f.read(Header.size)))

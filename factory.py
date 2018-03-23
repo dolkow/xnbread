@@ -5,10 +5,13 @@ import re
 
 from functools import partial
 from inspect import signature
-from util import TODO
+from util import TODO, log
 
 MANGLED_PTN = re.compile('([^[`]+)(?:`(\d+)\[(.*)\])?')
 READER_REGISTRY = {} # reader name without generic args -> reader function
+
+class FlexibleObject(object):
+	pass
 
 class ObjectFactory(object):
 	def __init__(self, stream, reader_names):
@@ -30,9 +33,11 @@ def reader_by_name(mangled_name):
 	match = MANGLED_PTN.match(mangled_name)
 	assert match, 'reader does not match mangled pattern: %s' % mangled_name
 	name, nparams, params = match.groups()
+	if not nparams:
+		name, junk = name.split(',', 1)
 	reader = READER_REGISTRY.get(name)
 	if reader is None:
-		raise NotImplementedException('reader does not exist: %s' % name)
+		raise NotImplementedError('reader does not exist: %s' % name)
 	return reader
 
 def read_dict(factory):
@@ -48,3 +53,16 @@ add_reader(read_dict, 'Microsoft.Xna.Framework.Content.DictionaryReader')
 def read_str(factory):
 	return factory.stream.read_string()
 add_reader(read_str, 'Microsoft.Xna.Framework.Content.StringReader')
+
+def read_texture(factory):
+	texture = FlexibleObject()
+	texture.format = factory.stream.read_u32()
+	texture.width = factory.stream.read_u32()
+	texture.height = factory.stream.read_u32()
+	mips = factory.stream.read_u32()
+	texture.miplevels = mips * [None]
+	for i in range(mips):
+		dsize = factory.stream.read_u32()
+		texture.miplevels[i] = factory.stream.read_bytes(dsize)
+	return texture
+add_reader(read_texture, 'Microsoft.Xna.Framework.Content.Texture2DReader')
