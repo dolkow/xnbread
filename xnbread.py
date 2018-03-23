@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #coding=utf8
 
-from factory import ObjectFactory
+from readers import *
 from util import TODO, define_tuple, dumphex, log
 import struct
 
@@ -11,41 +11,6 @@ FLAG_BIT_COMPRESSED = 0x80
 
 Header = define_tuple('Header', '<3scBBI', 10,
 		'magic target version flags fsize')
-
-class ByteStream(object):
-	def __init__(self, content):
-		self.pos = 0
-		self.data = content
-		assert type(content) in (bytes, bytearray, memoryview)
-		if type(content) is memoryview:
-			assert type(content.obj) in (bytes, bytearray)
-
-	def read_7bitint(self):
-		res = 0
-		byte = 0x80
-		start = self.pos
-		while byte & 0x80:
-			byte = self.data[self.pos]
-			res |= (byte & 0x7f) << (7 * (self.pos-start))
-			self.pos += 1
-		return res
-
-	def read_u32(self):
-		val, = struct.unpack('<I', self.data[self.pos:self.pos+4])
-		self.pos += 4
-		return val
-
-	def read_string(self):
-		nbytes = self.read_7bitint()
-		binary = self.data[self.pos:self.pos+nbytes]
-		self.pos += nbytes
-		return str(binary, 'utf-8')
-
-	def read_bytes(self, nbytes):
-		out = self.data[self.pos:self.pos+nbytes]
-		self.pos += nbytes
-		return out
-
 
 def read_payload(f):
 	header = Header._make(struct.unpack(Header.format, f.read(Header.size)))
