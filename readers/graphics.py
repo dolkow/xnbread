@@ -3,8 +3,8 @@
 
 from . import add_reader
 
-from .basic import _boolean, _char, _i32, _u32, _single
-from .system import _nullable
+from .basic import _boolean, _char, _i32, _u32, _single, _byte
+from .system import _nullable, _list
 
 from collections import namedtuple as _nt
 
@@ -20,6 +20,11 @@ def _read_texture2d(factory):
 		mips[i] = factory.stream.read_bytes(dsize)
 	return Texture2d(fmt, w, h, mips)
 add_reader(_read_texture2d, 'Microsoft.Xna.Framework.Content.Texture2DReader', 'Microsoft.Xna.Framework.Graphics.Texture2D')
+
+Effect = _nt('Effect', 'bytecode')
+def _effect(factory):
+	return Effect(_list(_byte, factory))
+add_reader(_effect, 'Microsoft.Xna.Framework.Content.EffectReader', 'Microsoft.Xna.Framework.Graphics.Effect')
 
 
 SpriteFont = _nt('SpriteFont', 'texture glyphs crop charmap vspace hspace kerning defchar')

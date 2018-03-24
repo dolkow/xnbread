@@ -11,14 +11,18 @@ def _nullable(ttype, factory):
 	return None
 add_reader(_nullable, 'Microsoft.Xna.Framework.Content.NullableReader', 'System.Nullable', True)
 
-def _list(ttype, factory):
-	count = _u32(factory)
+def _fixedarray(ttype, count, factory):
 	out = count * [None]
 	for i in range(count):
 		out[i] = factory.read(ttype)
 	return out
+
+def _list(ttype, factory):
+	count = _u32(factory)
+	return _fixedarray(ttype, count, factory)
+
+add_reader(_list, 'Microsoft.Xna.Framework.Content.ArrayReader', '[]') # not _fixedarray
 add_reader(_list, 'Microsoft.Xna.Framework.Content.ListReader', 'System.Collections.Generic.List')
-add_reader(_list, 'Microsoft.Xna.Framework.Content.ArrayReader', '[]')
 
 def _read_dict(ktype, vtype, factory):
 	out = dict()

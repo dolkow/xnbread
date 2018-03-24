@@ -27,6 +27,10 @@ def _single(factory):
 add_reader(_single, 'Microsoft.Xna.Framework.Content.SingleReader', 'System.Single', True)
 
 
+def _byte(factory):
+	return factory.stream.read_byte()
+add_reader(_byte, 'Microsoft.Xna.Framework.Content.ByteReader', 'System.Byte', True)
+
 def _char(factory):
 	return factory.stream.read_char()
 add_reader(_char, 'Microsoft.Xna.Framework.Content.CharReader', 'System.Char', True)
