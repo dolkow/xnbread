@@ -16,7 +16,9 @@ def _list(ttype, factory):
 	out = count * [None]
 	for i in range(count):
 		out[i] = factory.read(ttype)
+	return out
 add_reader(_list, 'Microsoft.Xna.Framework.Content.ListReader', 'System.Collections.Generic.List')
+add_reader(_list, 'Microsoft.Xna.Framework.Content.ArrayReader', '[]')
 
 def _read_dict(ktype, vtype, factory):
 	out = dict()

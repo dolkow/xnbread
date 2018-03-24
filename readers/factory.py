@@ -129,7 +129,9 @@ def reader_from_mangled(mangled_name):
 		start = 1
 		end = 2
 		while end < len(paramstr):
-			if paramstr[end] == ']':
+			if paramstr[end] == '[':
+				depth += 1
+			elif paramstr[end] == ']':
 				depth -= 1
 				if depth == 0:
 					tparams.append(paramstr[start:end])
@@ -158,6 +160,11 @@ def type_from_mangled(mangled_name):
 	match = PLAIN_TYPE_PTN.match(mangled_name)
 	assert match, 'type does not match plain pattern: %s' % mangled_name
 	name = match.group(1)
+	if name.endswith('[]'):
+		# TODO: reuse DataType instance per array type?
+		ttype = type_from_mangled(name[:-2])
+		atype = NAME_TO_TYPE['[]']
+		return DataType(partial(atype.readfunc, ttype), atype.isvaluetype)
 	dtype = NAME_TO_TYPE.get(name)
 	if dtype is None:
 		return DataType(partial(fallbackread, 'type', name), True)
