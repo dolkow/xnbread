@@ -8,8 +8,7 @@ RED="$(tput setaf 1)"
 
 function testone() {
 	xnb="$1"
-	echo -n "$xnb... "
-	until ./xnbread.py "$xnb" &>/dev/null; do
+	until (echo -n "$xnb... "; ./xnbread.py "$xnb" &>/dev/null); do
 		echo "${RED}Failure.${RESET}"
 		./xnbread.py "$xnb" || true # run again to get the callstack/message
 		echo
@@ -32,5 +31,3 @@ fi
 
 echo
 echo "${GREEN}All files parsed without crashes${RESET}"
-
-rm $SCRATCH
