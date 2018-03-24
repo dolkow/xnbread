@@ -2,8 +2,14 @@
 
 set -eu
 
-SCRIPT="$1"
-shift
+SCRIPT="./xnbread.py"
+if [ $# -gt 0 ]; then
+	if [[ ! "$1" =~ .xnb$ && -f "$1" && -x "$1" ]]; then
+		# the first arg is an executable file; use it.
+		SCRIPT="$1"
+		shift
+	fi
+fi
 
 RESET="$(tput sgr0)"
 GREEN="$(tput setaf 2)"
