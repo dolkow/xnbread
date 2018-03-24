@@ -7,7 +7,7 @@ import struct
 from collections import namedtuple
 from functools import partial
 from inspect import signature
-from util import TODO, log
+from util import TODO, log, dumphex
 
 GENERIC_READER_PTN = re.compile(r'([^[`]+)(?:`(\d+)\[(.*)\])?')
 PLAIN_TYPE_PTN = re.compile(r'([^,]+)(?:, ([^,]+), Version=([0-9.]+), Culture=([^,]+), PublicKeytoken=([a-f0-9]+))?')
@@ -72,6 +72,12 @@ class ByteStream(object):
 
 DataType = namedtuple('DataType', 'readfunc isvaluetype')
 
+def fallbackread(kind, name, factory):
+	log('%s does not exist: %s' % (kind, name))
+	log('upcoming data:')
+	dumphex(factory.stream.data[factory.stream.pos:factory.stream.pos+128])
+	raise NotImplementedError('%s %s' % (kind, name))
+
 class ObjectFactory(object):
 	def __init__(self, stream, reader_names):
 		self.stream = stream
@@ -101,10 +107,6 @@ def add_reader(func, readername, typename, isvaluetype=False):
 	READER_TO_TYPE[readername] = dtype
 	assert typename not in NAME_TO_TYPE
 	NAME_TO_TYPE[typename] = dtype
-
-def demangle(mangled_type):
-	match = MANGLED_PTN.match(mangled_name)
-	raise NotImplementedError()
 
 def reader_from_mangled(mangled_name):
 	match = GENERIC_READER_PTN.match(mangled_name)
@@ -141,7 +143,7 @@ def reader_from_mangled(mangled_name):
 	assert nparams == len(tparams)
 	dtype = READER_TO_TYPE.get(name)
 	if dtype is None:
-		raise NotImplementedError('reader does not exist: %s' % name)
+		return partial(fallbackread, 'reader', name)
 	sig = signature(dtype.readfunc)
 	assert len(sig.parameters) == nparams + 1, 'expected %s to have %d parameters, but it has %d' % (str(dtype.readfunc), nparams+1, len(sig.parameters))
 	if len(sig.parameters) == 1:
@@ -155,4 +157,7 @@ def type_from_mangled(mangled_name):
 	match = PLAIN_TYPE_PTN.match(mangled_name)
 	assert match, 'type does not match plain pattern: %s' % mangled_name
 	name = match.group(1)
-	return NAME_TO_TYPE[name]
+	dtype = NAME_TO_TYPE.get(name)
+	if dtype is None:
+		return DataType(partial(fallbackread, 'type', name), True)
+	return dtype
