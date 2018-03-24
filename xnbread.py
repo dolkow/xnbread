@@ -5,6 +5,8 @@ from readers import *
 from util import TODO, define_tuple, dumphex, log
 import struct
 
+import stardew
+
 KNOWN_FLAGS = 0x81
 FLAG_BIT_HIDEF      = 0x01
 FLAG_BIT_COMPRESSED = 0x80

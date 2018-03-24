@@ -99,14 +99,15 @@ class ObjectFactory(object):
 		reader = self.readers[typeid - 1]
 		return reader(self)
 
-def add_reader(func, readername, typename, isvaluetype=False):
-	assert type(readername) is str
-	assert type(typename) is str
+def add_reader(func, readername, typename=None, isvaluetype=False):
 	dtype = DataType(func, isvaluetype)
+	assert type(readername) is str
 	assert readername not in READER_TO_TYPE
 	READER_TO_TYPE[readername] = dtype
-	assert typename not in NAME_TO_TYPE
-	NAME_TO_TYPE[typename] = dtype
+	if typename is not None:
+		assert type(typename) is str
+		assert typename not in NAME_TO_TYPE
+		NAME_TO_TYPE[typename] = dtype
 
 def reader_from_mangled(mangled_name):
 	match = GENERIC_READER_PTN.match(mangled_name)
