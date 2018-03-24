@@ -5,8 +5,6 @@ from readers import *
 from util import TODO, define_tuple, dumphex, log
 import struct
 
-import stardew
-
 KNOWN_FLAGS = 0x81
 FLAG_BIT_HIDEF      = 0x01
 FLAG_BIT_COMPRESSED = 0x80
@@ -51,6 +49,23 @@ def decode_payload(data):
 		TODO("Haven't implemented shared resources yet")
 	return primary
 
+def dump(f, raw=False):
+	data = read_payload(f)
+	if raw:
+		sys.stdout.buffer.write(data)
+		return
+	out = decode_payload(data)
+	if type(out) is dict:
+		for key in out:
+			print(key, '==>')
+			print(out[key])
+			print()
+	elif type(out) in (list, tuple):
+		for pair in enumerate(out):
+			print('%3d: %s' % pair)
+	else:
+		print(out)
+
 if __name__ == '__main__':
 	import sys
 	raw = False
@@ -59,19 +74,4 @@ if __name__ == '__main__':
 			raw = True
 			continue
 		with open(filename, 'rb') as f:
-			data = read_payload(f)
-			if raw:
-				sys.stdout.buffer.write(data)
-				continue
-			else:
-				out = decode_payload(data)
-			if type(out) is dict:
-				for key in out:
-					print(key, '==>')
-					print(out[key])
-					print()
-			elif type(out) in (list, tuple):
-				for pair in enumerate(out):
-					print('%3d: %s' % pair)
-			else:
-				print(out)
+			dump(f, raw)

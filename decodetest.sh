@@ -2,15 +2,18 @@
 
 set -eu
 
+SCRIPT="$1"
+shift
+
 RESET="$(tput sgr0)"
 GREEN="$(tput setaf 2)"
 RED="$(tput setaf 1)"
 
 function testone() {
 	xnb="$1"
-	until (echo -n "$xnb... "; ./xnbread.py "$xnb" &>/dev/null); do
+	until (echo -n "$xnb... "; "$SCRIPT" "$xnb" &>/dev/null); do
 		echo "${RED}Failure.${RESET}"
-		./xnbread.py "$xnb" || true # run again to get the callstack/message
+		"$SCRIPT" "$xnb" || true # run again to get the callstack/message
 		echo
 		read -p 'Press ENTER to retry, or Ctrl-C to give up'
 	done
