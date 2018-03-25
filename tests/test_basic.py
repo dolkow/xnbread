@@ -20,6 +20,19 @@ class ReaderVariations(TestCase):
 		self.assertEqual(decode(['CharReader', 'ByteReader'], b'\x02A'), 65)
 
 
+class VerboseType(TestCase):
+	readers = [
+		'StringReader',
+		'UInt16',
+		'ListReader`1[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=fedcba9876543210]]',
+		'ListReader`1[[System.UInt16, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=fedcba9876543210]]',
+	]
+
+	test_verbose_reftype_null = mktest(b'\x03\x01\x00\x00\x00\x00', [None])
+	test_verbose_reftype = mktest(b'\x03\x01\x00\x00\x00\x01\x08hi there', ['hi there'])
+	test_verbose_valtype = mktest(b'\x04\x01\x00\x00\x00\x12\x34', [0x3412])
+
+
 class ByteTests(TestCase):
 	readers = ['ByteReader']
 	test_byte_a   = mktest(b'\x01A', 65)
