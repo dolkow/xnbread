@@ -7,7 +7,8 @@ import struct
 from collections import namedtuple
 from functools import partial
 from inspect import signature
-from util import TODO, log, dumphex
+
+from ..util import TODO, log, dumphex
 
 GENERIC_READER_PTN = re.compile(r'([^[`]+)(?:`(\d+)\[(.*)\])?')
 PLAIN_TYPE_PTN = re.compile(r'([^,]+)(?:, ([^,]+), Version=([0-9.]+), Culture=([^,]+), PublicKeytoken=([a-f0-9]+))?')

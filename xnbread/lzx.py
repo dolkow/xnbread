@@ -6,7 +6,7 @@
 
 import struct
 
-from util import TODO, clamp, dumphex, log
+from .util import TODO, clamp, dumphex, log
 
 # block types:
 VERBATIM     = 1

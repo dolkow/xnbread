@@ -5,8 +5,8 @@
 
 import xnbread
 
-from readers import *
-from readers.basic import _read_str, _u32
+from xnbread.readers import *
+from xnbread.readers.basic import _read_str, _u32
 
 def _bmxml(factory):
 	# TODO: parse this xml? Nahhh.
