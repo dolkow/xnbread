@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 #coding=utf8
 
-from . import add_reader
-from .basic import _u32, _boolean
+from . import *
 
-def _nullable(ttype, factory):
-	hasobj = _boolean(factory)
+def nullable(ttype, factory):
+	hasobj = boolean(factory)
 	if hasobj:
 		return factory.read(ttype)
 	return None
-add_reader(_nullable, 'Microsoft.Xna.Framework.Content.NullableReader', 'System.Nullable', True)
+add_reader(nullable, 'Microsoft.Xna.Framework.Content.NullableReader', 'System.Nullable', True)
 
-def _fixedarray(ttype, count, factory):
+def fixedarray(ttype, count, factory):
 	out = count * [None]
 	for i in range(count):
 		out[i] = factory.read(ttype)
 	return out
 
-def _list(ttype, factory):
-	count = _u32(factory)
-	return _fixedarray(ttype, count, factory)
+def genericlist(ttype, factory):
+	count = u32(factory)
+	return fixedarray(ttype, count, factory)
 
-add_reader(_list, 'Microsoft.Xna.Framework.Content.ArrayReader', '[]') # not _fixedarray
-add_reader(_list, 'Microsoft.Xna.Framework.Content.ListReader', 'System.Collections.Generic.List')
+add_reader(genericlist, 'Microsoft.Xna.Framework.Content.ArrayReader', '[]') # not fixedarray
+add_reader(genericlist, 'Microsoft.Xna.Framework.Content.ListReader', 'System.Collections.Generic.List')
 
-def _read_dict(ktype, vtype, factory):
+def dictionary(ktype, vtype, factory):
 	out = dict()
 	count = factory.stream.read_u32()
 	for i in range(count):
@@ -32,5 +31,5 @@ def _read_dict(ktype, vtype, factory):
 		val = factory.read(vtype)
 		out[key] = val
 	return out
-add_reader(_read_dict, 'Microsoft.Xna.Framework.Content.DictionaryReader', 'System.Collections.Generic.Dictionary')
+add_reader(dictionary, 'Microsoft.Xna.Framework.Content.DictionaryReader', 'System.Collections.Generic.Dictionary')
 
