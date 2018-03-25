@@ -3,6 +3,7 @@
 
 from unittest import TestCase
 from .util import decode, mktest
+from xnbread.exceptions import XnbUnknownType
 
 class NullTests(TestCase):
 	def test_null(self):
@@ -19,6 +20,36 @@ class ReaderVariations(TestCase):
 	def test_extra_reader_2(self):
 		self.assertEqual(decode(['CharReader', 'ByteReader'], b'\x02A'), 65)
 
+
+class OobType(TestCase):
+	def test_first_type(self):
+		with self.assertRaises(XnbUnknownType):
+			decode([], b'\x01')
+
+	def test_giant_type(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['Not', 'Really', 'Real'], b'\x80\x80\x80\x01')
+
+	def test_inside_list(self):
+		readers = ['ListReader`1[[System.String]]']
+		data = b'\x01\x01\x00\x00\x00\x02'
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, data)
+
+
+class MissingTypes(TestCase):
+	def test_inside_list(self):
+		readers = ['ListReader`1[[System.FakeString]]', 'StringReader']
+		data = b'\x01\x01\x00\x00\x00\x02\x02ab'
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, data)
+
+class MissingReaders(TestCase):
+	def test_single_missing(self):
+		readers = ['FakeStringReader']
+		data = b'\x01\x02ab'
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, data)
 
 class VerboseType(TestCase):
 	readers = [

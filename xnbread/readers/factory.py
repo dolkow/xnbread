@@ -8,6 +8,8 @@ from collections import namedtuple
 from functools import partial
 from inspect import signature
 
+from ..exceptions import XnbUnknownType, XnbConfigError
+
 from ..util import TODO, log, dumphex
 
 GENERIC_READER_PTN = re.compile(r'([^[`]+)(?:`(\d+)\[(.*)\])?')
@@ -77,37 +79,46 @@ def fallbackread(kind, name, factory):
 	log('%s does not exist: %s' % (kind, name))
 	log('upcoming data:')
 	dumphex(factory.stream.data[factory.stream.pos:factory.stream.pos+128])
-	raise NotImplementedError('%s %s' % (kind, name))
+	raise XnbUnknownType('%s %s' % (kind, name))
 
 class ObjectFactory(object):
 	def __init__(self, stream, reader_names):
 		self.stream = stream
 		self.readers = [reader_from_mangled(n) for n in reader_names]
-		assert not any(s is None for s in self.readers)
+		if any(s is None for s in self.readers):
+			raise XnbReadError('at least one reader is None')
 
 	def read(self, dtype=None):
 		if dtype is not None:
 			if callable(dtype):
 				return dtype(self)
 			else:
-				assert type(dtype) is DataType
+				if type(dtype) is not DataType:
+					raise XnbReadError('%s is not a DataType' % str(dtype))
 				if dtype.isvaluetype:
 					return dtype.readfunc(self)
 		typeid = self.stream.read_7bitint()
 		if typeid == 0:
 			return None
-		assert typeid <= len(self.readers), 'typeid %d > %d' % (typeid, len(self.readers))
+		if typeid > len(self.readers):
+			raise XnbUnknownType('typeid %d is larger than the number of readers (%d)' % (typeid, len(self.readers)))
 		reader = self.readers[typeid - 1]
 		return reader(self)
 
 def add_reader(func, readername, typename=None, isvaluetype=False):
+	if not callable(func):
+		raise XnbConfigError('%s is not callable' % repr(func))
 	dtype = DataType(func, isvaluetype)
-	assert type(readername) is str
-	assert readername not in READER_TO_TYPE
+	if type(readername) is not str:
+		raise XnbConfigError('reader name %s is not a string' % repr(readername))
+	if readername in READER_TO_TYPE:
+		raise XnbConfigError('duplicate reader name %s' % readername)
 	READER_TO_TYPE[readername] = dtype
 	if typename is not None:
-		assert type(typename) is str
-		assert typename not in NAME_TO_TYPE
+		if type(typename) is not str:
+			raise XnbConfigError('type name %s is not a string' % repr(typename))
+		if typename in NAME_TO_TYPE:
+			raise XnbConfigError('duplicate type name %s' % typename)
 		NAME_TO_TYPE[typename] = dtype
 
 def reader_from_mangled(mangled_name):
