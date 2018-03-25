@@ -2,6 +2,7 @@
 #coding=utf8
 
 from . import *
+from ..exceptions import XnbInvalidPayload
 
 def nullable(ttype, factory):
 	hasobj = boolean(factory)
@@ -29,6 +30,8 @@ def dictionary(ktype, vtype, factory):
 	for i in range(count):
 		key = factory.read(ktype)
 		val = factory.read(vtype)
+		if key in out:
+			raise XnbInvalidPayload('duplicate key "%s"' % str(key))
 		out[key] = val
 	return out
 add_reader(dictionary, 'Microsoft.Xna.Framework.Content.DictionaryReader', 'System.Collections.Generic.Dictionary')

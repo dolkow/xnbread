@@ -3,3 +3,4 @@
 
 from .container import read_payload, decode_payload, dump
 from . import readers
+from . import exceptions

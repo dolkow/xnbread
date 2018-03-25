@@ -4,6 +4,8 @@
 from unittest import TestCase
 from .util import mktest, decode
 
+from xnbread.exceptions import XnbInvalidPayload
+
 class NullableBoolTests(TestCase):
 	readers = ['NullableReader`1[[System.Boolean]]']
 	test_nullable_bool_true = mktest(b'\x01\x01\x01', True)
@@ -129,3 +131,9 @@ class DictionaryTests(TestCase):
 		self.assertEqual(out['xyz'], 'coords')
 		self.assertEqual(out[10], 0x0e0d0c0b)
 		self.assertEqual(out[0x80000001], 'hi')
+
+	def test_dict_duplicate_key(self):
+		readers = ['DictionaryReader`2[[System.String],[System.UInt16]]', 'StringReader']
+		data = b'\x01\x02\x00\x00\x00\x02\x02hi\x03\x01\x02\x02hi\x01\x02'
+		with self.assertRaises(XnbInvalidPayload):
+			decode(readers, data)
