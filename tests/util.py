@@ -6,6 +6,12 @@ import struct
 
 import xnbread
 
+def mktest(data, expected):
+	def decodetest(tcase):
+		out = decode(tcase.readers, data)
+		tcase.assertEqual(out, expected)
+	return decodetest
+
 def _seven(out, v):
 	assert v >= 0
 	if v == 0:

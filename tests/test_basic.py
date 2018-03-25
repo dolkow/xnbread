@@ -2,14 +2,7 @@
 #coding=utf8
 
 from unittest import TestCase
-from .util import decode
-
-def mktest(data, expected):
-	def decodetest(tcase):
-		out = decode(tcase.readers, data)
-		tcase.assertEqual(out, expected)
-	return decodetest
-
+from .util import decode, mktest
 
 class NullTests(TestCase):
 	def test_null(self):
