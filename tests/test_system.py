@@ -15,24 +15,32 @@ class ArrayTests(TestCase):
 	readers = [
 		'ArrayReader`1[[System.String]]',
 		'StringReader',
-		'ArrayReader`1[[System.UInt16]]'
+		'ArrayReader`1[[System.UInt16]]',
+		'ArrayReader`1[[System.Object]]',
+		'UInt16Reader'
 	]
 	intdata = b'\x03\x04\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08'
 	strdata = b'\x01\x03\x00\x00\x00\x02\x05Hello\x02\x05cruel\x02\x06world!'
+	mixdata = b'\x04\x03\x00\x00\x00\x02\x05Hello\x05\x01\x80\x02\x06world!'
 	test_int_elems = mktest(intdata, [513, 1027, 1541, 2055])
 	test_str_elems = mktest(strdata, ['Hello', 'cruel', 'world!'])
+	test_mix_elems = mktest(mixdata, ['Hello', 32769, 'world!'])
 
 
 class ListTests(TestCase):
 	readers = [
 		'ListReader`1[[System.UInt16]]',
 		'StringReader',
-		'ListReader`1[[System.String]]'
+		'ListReader`1[[System.String]]',
+		'ArrayReader`1[[System.Object]]',
+		'Int16Reader'
 	]
 	intdata = b'\x01\x04\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08'
 	strdata = b'\x03\x03\x00\x00\x00\x02\x05Hello\x02\x05cruel\x02\x06world!'
+	mixdata = b'\x04\x03\x00\x00\x00\x02\x05Hello\x05\x01\x80\x02\x06world!'
 	test_int_elems = mktest(intdata, [513, 1027, 1541, 2055])
 	test_str_elems = mktest(strdata, ['Hello', 'cruel', 'world!'])
+	test_mix_elems = mktest(mixdata, ['Hello', -32767, 'world!'])
 
 
 class DictionaryTests(TestCase):
@@ -87,3 +95,37 @@ class DictionaryTests(TestCase):
 		self.assertEqual(out['ae'], 'ä')
 		self.assertEqual(out['oe'], 'ö')
 
+	def test_dict_str_mix(self):
+		readers = ['DictionaryReader`2[[System.String],[System.Object]]', 'StringReader', 'UInt32Reader']
+		data = (b'\x01\x03\x00\x00\x00' +
+		        b'\x02\x02aa\x03\x00\x00\x00\x80' +
+		        b'\x02\x03abc\x02\x03xyz' +
+		        b'\x02\x03def\x03\x01\x00\x00\x80')
+		out = decode(readers, data)
+		self.assertIsInstance(out, dict)
+		self.assertEqual(len(out), 3)
+		self.assertIn('aa', out)
+		self.assertIn('abc', out)
+		self.assertIn('def', out)
+		self.assertEqual(out['aa'], 1<<31)
+		self.assertEqual(out['abc'], 'xyz')
+		self.assertEqual(out['def'], 0x80000001)
+
+	def test_dict_mix_mix(self):
+		readers = ['DictionaryReader`2[[System.Object],[System.Object]]', 'StringReader', 'UInt32Reader']
+		data = (b'\x01\x04\x00\x00\x00' +
+		        b'\x03\x0a\x00\x00\x00\x03\x0b\x0c\x0d\x0e' +
+		        b'\x02\x02xy\x03\xff\xff\x00\x00' +
+		        b'\x02\x03xyz\x02\x06coords' +
+		        b'\x03\x01\x00\x00\x80\x02\x02hi')
+		out = decode(readers, data)
+		self.assertIsInstance(out, dict)
+		self.assertEqual(len(out), 4)
+		self.assertIn('xy', out)
+		self.assertIn('xyz', out)
+		self.assertIn(10, out)
+		self.assertIn(0x80000001, out)
+		self.assertEqual(out['xy'], 65535)
+		self.assertEqual(out['xyz'], 'coords')
+		self.assertEqual(out[10], 0x0e0d0c0b)
+		self.assertEqual(out[0x80000001], 'hi')

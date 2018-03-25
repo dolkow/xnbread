@@ -64,3 +64,8 @@ add_reader(char, 'Microsoft.Xna.Framework.Content.CharReader', 'System.Char', Tr
 def string(factory):
 	return factory.stream.read_string()
 add_reader(string, 'Microsoft.Xna.Framework.Content.StringReader', 'System.String')
+
+
+def obj(factory):
+	return factory.read()
+add_reader(obj, 'Microsoft.Xna.Framework.Content.ObjectReader', 'System.Object')
