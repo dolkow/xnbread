@@ -138,27 +138,28 @@ def reader_from_mangled(mangled_name):
 	else:
 		# TODO: multi-level nesting like ListReader`1[Nullable[Boolean]] will probably fail.
 		nparams = int(nparams)
-		assert paramstr[0] == '['
-		assert paramstr[-1] == ']'
-		assert len(paramstr) > 2
+		if len(paramstr) < 2:
+			raise XnbUnkownType('Unreasonably short param str: %s' % paramstr)
 		depth = 1
 		start = 1
-		end = 2
+		end = 1
 		while end < len(paramstr):
 			if paramstr[end] == '[':
 				depth += 1
 			elif paramstr[end] == ']':
 				depth -= 1
 				if depth == 0:
+					if paramstr[start - 1] != '[':
+						raise XnbUnknownType('Expected a starting bracket at %d in %s' % (start-1, paramstr))
+					if start > 1 and paramstr[start - 2] != ',':
+						raise XnbUnknownType('Expected a comma at %d in %s' % (start-2, paramstr))
 					tparams.append(paramstr[start:end])
-					if end + 2 < len(paramstr):
-						assert paramstr[end+1] == ','
-						assert paramstr[end+2] == '['
-						depth = 1
-						start = end + 3
-						end = start
+					start = end + 3
 			end += 1
-		assert depth == 0
+		if depth != 0:
+			raise XnbUnknownType('Unbalanced nesting in %s' % paramstr)
+		if start != len(paramstr) + 2:
+			raise XnbUnknownType('Unused chars at end of %s' % paramstr)
 	assert nparams == len(tparams)
 	dtype = READER_TO_TYPE.get(name)
 	if dtype is None:
@@ -174,7 +175,9 @@ def reader_from_mangled(mangled_name):
 
 def type_from_mangled(mangled_name):
 	match = PLAIN_TYPE_PTN.match(mangled_name)
-	assert match, 'type does not match plain pattern: %s' % mangled_name
+	# TODO: more tests for the unmatched case?
+	if not match:
+		raise XnbUnknownType('type does not match plain pattern: %s' % mangled_name)
 	name = match.group(1)
 	if name.endswith('[]'):
 		# TODO: reuse DataType instance per array type?

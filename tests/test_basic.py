@@ -101,6 +101,34 @@ class MissingReaders(TestCase):
 		with self.assertRaises(XnbUnknownType):
 			decode(readers, b'\x01\xff')
 
+	def test_missing_opener(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['ListReader`1[System.String]]'], b'\x01\x01\x00\x00\x00\x00')
+
+	def test_missing_closer(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['ListReader`1[[System.String]'], b'\x01\x01\x00\x00\x00\x00')
+
+	def test_extra_closer(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['ListReader`1[[System.String]]]'], b'\x01\x01\x00\x00\x00\x00\x00')
+
+	def test_missing_inner_type(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['ListReader`1[[]]'], b'\x01\x01\x00\x00\x00\x00')
+
+	def test_empty_inner_type(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['DictionaryReader`2[[System.String],[]]'], b'\x01\x01\x00\x00\x00\x00\x00')
+
+	def test_missing_inner_brackets(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['DictionaryReader`2[[System.String],System.String]'], b'\x01\x01\x00\x00\x00\x00\x00')
+
+	def test_inner_trailing_junk(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['ListReader`1[[System.String]junk]'], b'\x01\x01\x00\x00\x00\x00\x00')
+
 
 class VerboseType(TestCase):
 	readers = [
