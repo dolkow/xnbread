@@ -36,8 +36,9 @@ def _add_readerdefs(out, readers):
 def _header(content_size):
 	return struct.pack('<4sBBI', b'XNBw', 5, 1, content_size + 10)
 
-def decode(readers, payload):
-	readers = ['Microsoft.Xna.Framework.Content.' + r for r in readers]
+def decode(readers, payload, add_framework=True):
+	if add_framework:
+		readers = ['Microsoft.Xna.Framework.Content.' + r for r in readers]
 
 	mid = bytearray()
 	_add_readerdefs(mid, readers)

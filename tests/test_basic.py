@@ -50,6 +50,7 @@ class MissingTypes(TestCase):
 		self.assertNotIn('00', msg)
 		self.assertNotIn('01', msg)
 
+
 class MissingReaders(TestCase):
 	def test_single_missing(self):
 		readers = ['FakeStringReader']
@@ -61,6 +62,45 @@ class MissingReaders(TestCase):
 		self.assertIn('| ·ab', msg)
 		self.assertIn('0: 02 61 62', msg)
 		self.assertNotIn('01', msg)
+
+	def test_missing_name(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['`[[System.Byte]]'], b'\x01\x01\x00\x00\x00\xff', False)
+
+	def test_missing_argcount(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['ListReader`[[System.Byte]]'], b'\x01\x01\x00\x00\x00\xff')
+
+	def test_missing_lib(self):
+		readers = ['ByteReader, Version=4.0.0.0, Culture=neutral, PublicKeyToken=fedcba9876543210']
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, b'\x01\xff')
+
+	def test_missing_version(self):
+		readers = ['ByteReader, mscorlib, 4.0.0.0, Culture=neutral, PublicKeyToken=fedcba9876543210']
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, b'\x01\xff')
+
+	def test_missing_culture(self):
+		readers = ['ByteReader, mscorlib, Version=4.0.0.0, PublicKeyToken=fedcba9876543210']
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, b'\x01\xff')
+
+	def test_missing_key(self):
+		readers = ['ByteReader, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=']
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, b'\x01\xff')
+
+	def test_extra_junk(self):
+		readers = ['ByteReader, mscorlib, Version=4.0.0.0, Culture=neutral, Manners=null, PublicKeyToken=fedcba9876543210']
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, b'\x01\xff')
+
+	def test_extra_tail(self):
+		readers = ['ByteReader, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=fedcba9876543210, Manners=null']
+		with self.assertRaises(XnbUnknownType):
+			decode(readers, b'\x01\xff')
+
 
 class VerboseType(TestCase):
 	readers = [

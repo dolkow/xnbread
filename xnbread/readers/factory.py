@@ -13,8 +13,8 @@ from ..exceptions import XnbUnknownType, XnbConfigError
 
 from ..util import TODO, log, dumphex
 
-GENERIC_READER_PTN = re.compile(r'([^[`]+)(?:`(\d+)\[(.*)\])?')
-PLAIN_TYPE_PTN = re.compile(r'([^,]+)(?:, ([^,]+), Version=([0-9.]+), Culture=([^,]+), PublicKeytoken=([a-f0-9]+))?')
+GENERIC_READER_PTN = re.compile(r'([^[`]+)(?:`(\d+)\[(.*)\])?$')
+PLAIN_TYPE_PTN = re.compile(r'([^,]+)(?:, ([^,]+), Version=([0-9.]+), Culture=([^,]+), PublicKeyToken=([a-f0-9]+))?$')
 
 
 READER_TO_TYPE = {} # reader name without generic args -> DataType object
@@ -125,12 +125,14 @@ def add_reader(func, readername, typename=None, isvaluetype=False):
 
 def reader_from_mangled(mangled_name):
 	match = GENERIC_READER_PTN.match(mangled_name)
-	assert match, 'reader does not match mangled pattern: %s' % mangled_name
+	if not match:
+		raise XnbUnknownType('reader does not match mangled pattern: %s' % mangled_name)
 	name, nparams, paramstr = match.groups()
 	tparams = []
 	if nparams is None:
 		match = PLAIN_TYPE_PTN.match(mangled_name)
-		assert match, 'reader does not match plain pattern: %s' % mangled_name
+		if not match:
+			raise XnbUnknownType('reader does not match plain pattern: %s' % mangled_name)
 		name = match.group(1)
 		nparams = 0
 	else:
