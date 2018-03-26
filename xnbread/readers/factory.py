@@ -7,6 +7,7 @@ import struct
 from collections import namedtuple
 from functools import partial
 from inspect import signature
+from io import StringIO
 
 from ..exceptions import XnbUnknownType, XnbConfigError
 
@@ -76,10 +77,11 @@ class ByteStream(object):
 DataType = namedtuple('DataType', 'readfunc isvaluetype')
 
 def fallbackread(kind, name, factory):
-	log('%s does not exist: %s' % (kind, name))
-	log('upcoming data:')
-	dumphex(factory.stream.data[factory.stream.pos:factory.stream.pos+128])
-	raise XnbUnknownType('%s %s' % (kind, name))
+	msg = StringIO()
+	print('%s "%s" does not exist' % (kind, name), file=msg)
+	print('upcoming data:', file=msg)
+	dumphex(factory.stream.data[factory.stream.pos:factory.stream.pos+128], msg)
+	raise XnbUnknownType(msg.getvalue())
 
 class ObjectFactory(object):
 	def __init__(self, stream, reader_names):

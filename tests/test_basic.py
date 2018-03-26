@@ -41,15 +41,26 @@ class MissingTypes(TestCase):
 	def test_inside_list(self):
 		readers = ['ListReader`1[[System.FakeString]]', 'StringReader']
 		data = b'\x01\x01\x00\x00\x00\x02\x02ab'
-		with self.assertRaises(XnbUnknownType):
+		with self.assertRaises(XnbUnknownType) as raised:
 			decode(readers, data)
+		msg = str(raised.exception)
+		self.assertIn('FakeString', msg)
+		self.assertIn('| ··ab', msg)
+		self.assertIn('0: 02 02 61 62', msg)
+		self.assertNotIn('00', msg)
+		self.assertNotIn('01', msg)
 
 class MissingReaders(TestCase):
 	def test_single_missing(self):
 		readers = ['FakeStringReader']
 		data = b'\x01\x02ab'
-		with self.assertRaises(XnbUnknownType):
+		with self.assertRaises(XnbUnknownType) as raised:
 			decode(readers, data)
+		msg = str(raised.exception)
+		self.assertIn('FakeStringReader', msg)
+		self.assertIn('| ·ab', msg)
+		self.assertIn('0: 02 61 62', msg)
+		self.assertNotIn('01', msg)
 
 class VerboseType(TestCase):
 	readers = [

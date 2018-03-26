@@ -12,7 +12,7 @@ def log(*args):
 def TODO(msg = "Not implemented yet."):
 	raise NotImplementedError(msg)
 
-def dumphex(s):
+def dumphex(s, out=stderr):
 	assert type(s) in (bytes, bytearray, memoryview)
 	if type(s) is memoryview:
 		assert type(s.obj) in (bytes, bytearray)
@@ -48,7 +48,7 @@ def dumphex(s):
 		raw = mkstr(s[pos:pos+16])
 		hex1 = mkhex(s[pos:pos+8])
 		hex2 = mkhex(s[pos+8:pos+16]) if pos + 8 < end else ''
-		print('%6x: %-23s  %-23s | %s' % (pos, hex1, hex2, raw), file=stderr)
+		print('%6x: %-23s  %-23s | %s' % (pos, hex1, hex2, raw), file=out)
 		pos += 16
 
 def define_tuple(name, fmt, expected_size, fields):
