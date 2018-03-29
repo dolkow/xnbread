@@ -129,6 +129,22 @@ class MissingReaders(TestCase):
 		with self.assertRaises(XnbUnknownType):
 			decode(['ListReader`1[[System.String]junk]'], b'\x01\x01\x00\x00\x00\x00\x00')
 
+	def test_nparams_above(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['DictionaryReader`3[[System.Byte],[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+
+	def test_nparams_below(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['DictionaryReader`1[[System.Byte],[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+
+	def test_tparam_missing(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['DictionaryReader`2[[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+
+	def test_tparam_extra(self):
+		with self.assertRaises(XnbUnknownType):
+			decode(['DictionaryReader`2[[System.Byte],[System.Byte],[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+
 
 class VerboseType(TestCase):
 	readers = [

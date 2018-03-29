@@ -160,7 +160,8 @@ def reader_from_mangled(mangled_name):
 			raise XnbUnknownType('Unbalanced nesting in %s' % paramstr)
 		if start != len(paramstr) + 2:
 			raise XnbUnknownType('Unused chars at end of %s' % paramstr)
-	assert nparams == len(tparams)
+	if nparams != len(tparams):
+		raise XnbUnknownType('Declared %d type parameters, but found %d' % (nparams, len(tparams)))
 	dtype = READER_TO_TYPE.get(name)
 	if dtype is None:
 		return partial(fallbackread, 'reader', name)
