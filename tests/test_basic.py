@@ -4,6 +4,7 @@
 from unittest import TestCase
 from .util import decode, mktest
 from xnbread.exceptions import XnbUnknownType
+from xnbread.readers import ObjectFactory
 
 class NullTests(TestCase):
 	def test_null(self):
@@ -131,19 +132,19 @@ class MissingReaders(TestCase):
 
 	def test_nparams_above(self):
 		with self.assertRaises(XnbUnknownType):
-			decode(['DictionaryReader`3[[System.Byte],[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+			ObjectFactory(None, ['DictionaryReader`3[[System.Byte],[System.Byte]]'])
 
 	def test_nparams_below(self):
 		with self.assertRaises(XnbUnknownType):
-			decode(['DictionaryReader`1[[System.Byte],[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+			ObjectFactory(None, ['DictionaryReader`1[[System.Byte],[System.Byte]]'])
 
 	def test_tparam_missing(self):
 		with self.assertRaises(XnbUnknownType):
-			decode(['DictionaryReader`2[[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+			ObjectFactory(None, ['DictionaryReader`2[[System.Byte]]'])
 
 	def test_tparam_extra(self):
 		with self.assertRaises(XnbUnknownType):
-			decode(['DictionaryReader`2[[System.Byte],[System.Byte],[System.Byte]]'], b'\x01\x01\x00\x00\x00\x01\x01')
+			ObjectFactory(None, ['DictionaryReader`2[[System.Byte],[System.Byte],[System.Byte]]'])
 
 
 class VerboseType(TestCase):

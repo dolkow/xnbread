@@ -139,7 +139,7 @@ def reader_from_mangled(mangled_name):
 		# TODO: multi-level nesting like ListReader`1[Nullable[Boolean]] will probably fail.
 		nparams = int(nparams)
 		if len(paramstr) < 2:
-			raise XnbUnkownType('Unreasonably short param str: %s' % paramstr)
+			raise XnbUnknownType('Unreasonably short param str: %s' % paramstr)
 		depth = 1
 		start = 1
 		end = 1
@@ -166,7 +166,10 @@ def reader_from_mangled(mangled_name):
 	if dtype is None:
 		return partial(fallbackread, 'reader', name)
 	sig = signature(dtype.readfunc)
-	assert len(sig.parameters) == nparams + 1, 'expected %s to have %d parameters, but it has %d' % (str(dtype.readfunc), nparams+1, len(sig.parameters))
+	if len(sig.parameters) != nparams + 1:
+		fmt = 'readfunc %s has %d type parameters, but "%s" contains %d'
+		args = (str(dtype.readfunc), len(sig.parameters)-1, mangled_name, nparams)
+		raise XnbUnknownType(fmt % args)
 	if len(sig.parameters) == 1:
 		return dtype.readfunc
 	else:

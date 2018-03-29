@@ -4,7 +4,8 @@
 from unittest import TestCase
 from .util import mktest, decode
 
-from xnbread.exceptions import XnbInvalidPayload
+from xnbread.exceptions import XnbInvalidPayload, XnbUnknownType
+from xnbread.readers import ObjectFactory
 
 class NullableBoolTests(TestCase):
 	readers = ['NullableReader`1[[System.Boolean]]']
@@ -12,6 +13,14 @@ class NullableBoolTests(TestCase):
 	test_nullable_bool_false = mktest(b'\x01\x01\x00', False)
 	test_nullable_bool_null = mktest(b'\x01\x00', None)
 
+	def test_type_count_lo(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.NullableReader`0[]'])
+
+	def test_type_count_hi(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.NullableReader`2[[System.Byte],[System.Byte]]'])
+			print(of.readers)
 
 class ArrayTests(TestCase):
 	readers = [
@@ -28,6 +37,13 @@ class ArrayTests(TestCase):
 	test_str_elems = mktest(strdata, ['Hello', 'cruel', 'world!'])
 	test_mix_elems = mktest(mixdata, ['Hello', 32769, 'world!'])
 
+	def test_type_count_lo(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.ArrayReader`0[]'])
+
+	def test_type_count_hi(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.ArrayReader`2[[System.Byte],[System.Byte]]'])
 
 class ListTests(TestCase):
 	readers = [
@@ -44,6 +60,13 @@ class ListTests(TestCase):
 	test_str_elems = mktest(strdata, ['Hello', 'cruel', 'world!'])
 	test_mix_elems = mktest(mixdata, ['Hello', -32767, 'world!'])
 
+	def test_type_count_lo(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.ListReader`0[]'])
+
+	def test_type_count_hi(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.ListReader`2[[System.Byte],[System.Byte]]'])
 
 class DictionaryTests(TestCase):
 	def test_dict_uint_int(self):
@@ -137,3 +160,11 @@ class DictionaryTests(TestCase):
 		data = b'\x01\x02\x00\x00\x00\x02\x02hi\x03\x01\x02\x02hi\x01\x02'
 		with self.assertRaises(XnbInvalidPayload):
 			decode(readers, data)
+
+	def test_type_count_lo(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.DictionaryReader`1[[System.Byte]]'])
+
+	def test_type_count_hi(self):
+		with self.assertRaises(XnbUnknownType):
+			ObjectFactory(None, ['Microsoft.Xna.Framework.Content.DictionaryReader`3[[System.Byte],[System.Byte],[System.Byte]]'])
