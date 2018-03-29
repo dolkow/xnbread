@@ -3,7 +3,7 @@
 
 from unittest import TestCase
 from .util import decode, mktest
-from xnbread.exceptions import XnbUnknownType
+from xnbread.exceptions import XnbUnknownType, XnbInvalidPayload
 from xnbread.readers import ObjectFactory
 
 class NullTests(TestCase):
@@ -240,6 +240,10 @@ class BooleanTests(TestCase):
 	readers = ['BooleanReader']
 	test_bool_false = mktest(b'\x01\x00', False)
 	test_bool_true  = mktest(b'\x01\x01', True)
+
+	def test_invalid_bool(self):
+		with self.assertRaises(XnbInvalidPayload):
+			decode(['BooleanReader'], b'\x01\x03')
 
 
 class CharTests(TestCase):

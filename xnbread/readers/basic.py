@@ -2,12 +2,14 @@
 #coding=utf8
 
 from . import add_reader
+from ..exceptions import XnbInvalidPayload
 
 from struct import unpack as _unpack
 
 def boolean(factory):
 	v = factory.stream.read_byte()
-	assert v in (0,1)
+	if v != 0 and v != 1:
+		raise XnbInvalidPayload('encountered boolean value of %d' % v)
 	return (v == 1)
 add_reader(boolean, 'Microsoft.Xna.Framework.Content.BooleanReader', 'System.Boolean', True)
 
