@@ -1,4 +1,4 @@
-#XnbRead
+# XnbRead
 
 A python3 library for reading XNB files, a Microsoft container format used for
 storing game content.
