@@ -8,9 +8,9 @@ fi
 ROOT="$(readlink -e """$1""")"
 
 find "$ROOT" -type d | while read SRC; do
-	DST="${SRC#$ROOT/}"
+	DST="$(readlink -m ."${SRC#$ROOT}")"
 	if readlink -e "$SRC"/*.xnb > /dev/null; then
-		mkdir -p "./$DST"
-		ln -s "$SRC"/*.xnb "./$DST" > /dev/null
+		mkdir -p "$DST"
+		ln -s "$SRC"/*.xnb "$DST" > /dev/null
 	fi
 done
