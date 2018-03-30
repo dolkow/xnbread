@@ -102,6 +102,10 @@ class MissingReaders(TestCase):
 		with self.assertRaises(XnbUnknownType):
 			decode(readers, b'\x01\xff')
 
+	def test_null_key(self):
+		readers = ['ByteReader, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=null']
+		self.assertEqual(decode(readers, b'\x01\xff'), 0xff)
+
 	def test_missing_opener(self):
 		with self.assertRaises(XnbUnknownType):
 			decode(['ListReader`1[System.String]]'], b'\x01\x01\x00\x00\x00\x00')
