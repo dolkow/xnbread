@@ -77,6 +77,11 @@ class MissingReaders(TestCase):
 		with self.assertRaises(XnbUnknownType):
 			decode(readers, b'\x01\xff')
 
+	def test_only_lib(self):
+		readers = ['ByteReader, SomeLibrary']
+		out = decode(readers, b'\x01\xfe')
+		self.assertEqual(out, 254)
+
 	def test_missing_version(self):
 		readers = ['ByteReader, mscorlib, 4.0.0.0, Culture=neutral, PublicKeyToken=fedcba9876543210']
 		with self.assertRaises(XnbUnknownType):
