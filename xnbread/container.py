@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #coding=utf8
 
+from .exceptions import XnbInvalidHeader
 from .readers import *
 from .util import TODO, define_tuple, dumphex, log
 import struct
@@ -14,22 +15,29 @@ Header = define_tuple('Header', '<3scBBI', 10,
 
 def read_payload(f):
 	header = Header._make(struct.unpack(Header.format, f.read(Header.size)))
-	assert header.magic == b'XNB'
-	assert header.target in b'wmx'
-	assert header.version == 5
-	assert header.flags & KNOWN_FLAGS == header.flags
+	if header.magic != b'XNB':
+		raise XnbInvalidHeader('Magic %s is not XNB' % repr(header.magic))
+	if header.target not in b'wmx':
+		raise XnbInvalidHeader('Invalid target %s' % repr(header.target))
+	if header.version != 5:
+		raise XnbInvalidHeader('Invalid version %d' % header.version)
+	if header.flags & KNOWN_FLAGS != header.flags:
+		raise XnbInvalidHeader('Invalid flags 0x%08x' % header.flags)
 	if header.flags & FLAG_BIT_COMPRESSED:
 		from . import lzx
 		dsize, = struct.unpack('<I', f.read(4))
 		csize = header.fsize - Header.size - 4
 		data = f.read(csize)
-		assert len(data) == csize
+		if len(data) != csize:
+			raise XnbInvalidHeader('Declared compressed length %d, but could only read %d' % (csize, len(data)))
 		data = lzx.decompress(data, csize, dsize)
-		assert len(data) == dsize
+		if len(data) != dsize:
+			raise XnbInvalidHeader('Declared decompressed length %d, but could only read %d' % (dsize, len(data)))
 	else:
 		csize = header.fsize - Header.size
 		data = f.read(csize)
-		assert len(data) == csize
+		if len(data) != csize:
+			raise XnbInvalidHeader('Declared data length %d, but could only read %d' % (csize, len(data)))
 	return data
 
 def decode_payload(data):
